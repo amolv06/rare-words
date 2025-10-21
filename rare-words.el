@@ -50,10 +50,11 @@
 
 (defun rare-words--next-word (&optional max)
   (interactive)
-  (re-search-forward "\\b\\w+\\b"
+  (re-search-forward "[-\"'[:space:]]\\w+[-[:space:];',\".]"
 		     (or max (point-max))
 		     t)
-  (message (match-string 0)))
+   (backward-char)
+  (message (current-word) ))
 
 (defun rare-words-highlight ()
   (interactive)
