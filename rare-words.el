@@ -32,6 +32,10 @@
   "List containing the n most common words, where n is the value of
 `rare-words-common-words-cutoff'.")
 
+(defvar rare-words--active-overlays nil
+  "List containing all active overlays associated with the rare-words
+package.")
+
 (defun rare-words--build-common-words-table ()
   (with-temp-buffer
     (insert-file-contents rare-words-common-word-file)
@@ -50,12 +54,20 @@
 
 (defun rare-words--next-word (&optional max)
   (interactive)
-  (re-search-forward "[-\"'[:space:]]\\w+[-[:space:];',\".]"
+  (re-search-forward "(?:^|[(\"'[:space:]-])[a-zA-Z']+(?:$|[)[:space:];',\".-])"
 		     (or max (point-max))
 		     t)
    (backward-char)
-  (message (current-word) ))
+   (message (current-word nil t)))
 
+(defun rare-words--make-rare-word-overlay (min max rarity)
+  (let ((cur-overlay (make-overlay min max)))
+  (push cur-overlay rare-words--active-overlays)
+  (overlay-put cur-overlay 'face (cond ((eq rarity 'semicommon)
+					'warning)
+				       ((eq rarity 'rare)
+					'error)
+				       (t nil)))))
 (defun rare-words-highlight ()
   (interactive)
   (when (equal 0 (hash-table-count rare-words--common-words-table))
@@ -66,7 +78,15 @@
 	(highlight-zone-max (if (region-active-p)
 				(region-end)
 			      (point-max))))
-    (goto-char highlight-zone-minimum)))
+    (goto-char highlight-zone-min)
+    (while (< (point) highlight-zone-max)
+      (let* ((cur-word (rare-words--next-word highlight-zone-max))
+	     (cur-word-rarity (rare-words--identify-rare-word cur-word)))
+	(rare-words--make-rare-word-overlay (match-beginning 0)
+					    (match-end 0)
+					    cur-word-rarity)))))
+	
+	
 
 (rare-words-highlight)
 
