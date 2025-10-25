@@ -32,7 +32,7 @@
   "List containing the n most common words, where n is the value of
 `rare-words-common-words-cutoff'.")
 
-(defvar rare-words--active-overlays nil
+(defvar-local rare-words--active-overlays nil
   "List containing all active overlays associated with the rare-words
 package.")
 
@@ -54,7 +54,7 @@ package.")
 
 (defun rare-words--next-word (&optional max)
   (interactive)
-  (re-search-forward "(?:^|[(\"'[:space:]-])[a-zA-Z']+(?:$|[)[:space:];',\".-])"
+  (re-search-forward "[A-Za-z]+"
 		     (or max (point-max))
 		     t)
    (backward-char)
@@ -85,9 +85,13 @@ package.")
 	(rare-words--make-rare-word-overlay (match-beginning 0)
 					    (match-end 0)
 					    cur-word-rarity)))))
-	
-	
 
+(defun rare-words-remove-overlays ()
+  (interactive)
+  (dolist (overlay rare-words--active-overlays)
+    (delete-overlay overlay))
+  (setq rare-words--active-overlays nil))
+    
 (rare-words-highlight)
 
     
