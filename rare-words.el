@@ -6,7 +6,6 @@
 ;; Version: 20240608.1444
 ;; Keywords: zathura, theming
 ;; URL: https://github.com/amolv06/zathura-sync-theme
-
 ;;; Commentary:
 
 ;; This package is inspired by the blog post at
@@ -27,6 +26,14 @@
 (defcustom rare-words-common-word-file (expand-file-name "frequent"
 							 (file-name-directory buffer-file-name))
   "File containing a list of most common words")
+
+(defcustom rare-words-semi-common-word-face 'warning
+  "The overlay face used for semicommon words"
+  :type '(face))
+
+(defcustom rare-words-rare-word-face 'error
+  "The overlay face used for semicommon words"
+  :type '(face))
 
 (defvar rare-words--common-words-table (make-hash-table :test 'equal)
   "List containing the n most common words, where n is the value of
@@ -54,19 +61,19 @@ package.")
 
 (defun rare-words--next-word (&optional max)
   (interactive)
-  (re-search-forward "[A-Za-z]+"
-		     (or max (point-max))
-		     t)
-   (backward-char)
-   (message (current-word nil t)))
+  (if (re-search-forward "[A-Za-z']+"
+			 (or max (point-max))
+			 t)
+      (current-word nil t)
+    nil))
 
 (defun rare-words--make-rare-word-overlay (min max rarity)
   (let ((cur-overlay (make-overlay min max)))
   (push cur-overlay rare-words--active-overlays)
   (overlay-put cur-overlay 'face (cond ((eq rarity 'semicommon)
-					'warning)
+					rare-words-semi-common-word-face)
 				       ((eq rarity 'rare)
-					'error)
+					rare-words-rare-word-face)
 				       (t nil)))))
 (defun rare-words-highlight ()
   (interactive)
@@ -80,11 +87,14 @@ package.")
 			      (point-max))))
     (goto-char highlight-zone-min)
     (while (< (point) highlight-zone-max)
-      (let* ((cur-word (rare-words--next-word highlight-zone-max))
+      (let* ((cur-word-no-downcase (rare-words--next-word highlight-zone-max))
+	     (cur-word (when cur-word-no-downcase (downcase cur-word-no-downcase)))
 	     (cur-word-rarity (rare-words--identify-rare-word cur-word)))
-	(rare-words--make-rare-word-overlay (match-beginning 0)
-					    (match-end 0)
-					    cur-word-rarity)))))
+	(unless cur-word (goto-char highlight-zone-max))
+	(when (memq cur-word-rarity '(rare semicommon))
+	  (rare-words--make-rare-word-overlay (match-beginning 0)
+					      (match-end 0)
+					      cur-word-rarity))))))
 
 (defun rare-words-remove-overlays ()
   (interactive)
