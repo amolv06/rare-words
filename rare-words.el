@@ -15,47 +15,37 @@
 (defgroup rare-words nil
   "Customization group for rare-words.el.")
 
-(defcustom rare-words-common-word-cutoff 2500
+(defcustom rare-words-common-word-cutoff 1000
   "The number of most frequently used words to be considered common."
   :type '(integer :min 1 :max 100000))
 
-(defcustom rare-words-semi-common-word-cutoff 10000
+(defcustom rare-words-semi-common-word-cutoff 4486
   "The number of most frequently used words to be considered semi-common."
   :type '(integer :min 1 :max 100000))
 
-(defcustom rare-words-common-word-file (expand-file-name "frequent"
-							 (file-name-directory buffer-file-name))
-  "File containing a list of most common words")
+(defcustom rare-words-dictionary (expand-file-name "words.db"
+						   (file-name-directory buffer-file-name))
+  "Sqlite db file containing a list of words and the rankings for the most
+common ones.")
 
 (defcustom rare-words-semi-common-word-face 'warning
   "The overlay face used for semicommon words"
   :type '(face))
 
 (defcustom rare-words-rare-word-face 'error
-  "The overlay face used for semicommon words"
+  "The overlay face used for rare words"
   :type '(face))
-
-(defvar rare-words--common-words-table (make-hash-table :test 'equal)
-  "List containing the n most common words, where n is the value of
-`rare-words-common-words-cutoff'.")
 
 (defvar-local rare-words--active-overlays nil
   "List containing all active overlays associated with the rare-words
 package.")
 
-(defun rare-words--build-common-words-table ()
-  (with-temp-buffer
-    (insert-file-contents rare-words-common-word-file)
-    (goto-char (point-min))
-    (dotimes (i rare-words-semi-common-word-cutoff)
-      (puthash (current-word) i rare-words--common-words-table)
-      (forward-word 1))))
-
-(defun rare-words--identify-rare-word (word)
-  (let ((freq (or (gethash word rare-words--common-words-table) 9999999999999)))
-    (cond ((< freq rare-words-common-word-cutoff)
+(defun rare-words--identify-rare-word (db word)
+  (let ((rank (or (cadar (sqlite-select db (format "select * from dictionary where word='%s'" word)))
+		  9999999)))
+    (cond ((< rank rare-words-common-word-cutoff)
 	   'common)
-	  ((< freq rare-words-semi-common-word-cutoff)
+	  ((< rank rare-words-semi-common-word-cutoff)
 	   'semicommon)
 	  (t 'rare))))
 
@@ -75,9 +65,16 @@ package.")
 				       ((eq rarity 'rare)
 					rare-words-rare-word-face)
 				       (t nil)))))
+
+(defun rare-words--error-checks ()
+  (unless (sqlite-available-p)
+    (error "When did you compile emacs bruh? 1983? You don't have SQLite support"))
+  (unless (executable-find "sqlite3")
+    (error "Bruh, do you even sqlite, bruh? apt get sqlite or something, bruh."))
+    
 (defun rare-words-highlight ()
   (interactive)
-  (when (equal 0 (hash-table-count rare-words--common-words-table))
+    (when (equal 0 (hash-table-count rare-words--common-words-table))
     (rare-words--build-common-words-table))
   (let ((highlight-zone-min (if (region-active-p)
 				(region-beginning)
@@ -101,7 +98,4 @@ package.")
   (dolist (overlay rare-words--active-overlays)
     (delete-overlay overlay))
   (setq rare-words--active-overlays nil))
-    
-(rare-words-highlight)
-
     
