@@ -15,7 +15,7 @@
 (defgroup rare-words nil
   "Customization group for rare-words.el.")
 
-(defcustom rare-words-common-word-cutoff 1000
+(defcustom rare-words-common-word-cutoff 2500
   "The number of most frequently used words to be considered common."
   :type '(integer :min 1 :max 100000))
 
@@ -36,22 +36,27 @@ common ones.")
   "The overlay face used for rare words"
   :type '(face))
 
+(defcustom rare-words-search-forward-regex "[A-Za-z']"
+  "Regular expression used to define word patterns we want included."
+  :type '(string))
+
 (defvar-local rare-words--active-overlays nil
   "List containing all active overlays associated with the rare-words
 package.")
 
 (defun rare-words--identify-rare-word (db word)
-  (let ((rank (or (cadar (sqlite-select db (format "select * from dictionary where word='%s'" word)))
-		  9999999)))
-    (cond ((< rank rare-words-common-word-cutoff)
-	   'common)
-	  ((< rank rare-words-semi-common-word-cutoff)
-	   'semicommon)
-	  (t 'rare))))
+  (let* ((rank (or (cadar (sqlite-select db "select * from dictionary where word=?1" `(,word)))
+	       'unknown)))
+  (cond ((eq rank 'unknown)
+	 'unk)
+	((< rank rare-words-common-word-cutoff)
+	 'common)
+	((< rank rare-words-semi-common-word-cutoff)
+	 'semicommon)
+	(t 'rare))))
 
 (defun rare-words--next-word (&optional max)
-  (interactive)
-  (if (re-search-forward "[A-Za-z']+"
+  (if (re-search-forward rare-words-search-forward-regex
 			 (or max (point-max))
 			 t)
       (current-word nil t)
@@ -73,9 +78,16 @@ package.")
     (error "Bruh, do you even sqlite, bruh? apt get sqlite or something, bruh."))
   (unless (file-exists-p rare-words-dictionary)
     (error "Where's your dictionary, bruh? You think I'm Webster?")))
+
+(defun rare-words-remove-overlays ()
+  (interactive)
+  (dolist (overlay rare-words--active-overlays)
+    (delete-overlay overlay))
+  (setq rare-words--active-overlays nil))
     
 (defun rare-words-highlight ()
   (interactive)
+  (rare-words-remove-overlays)
   (rare-words--error-checks)
   (let ((highlight-zone-min (if (region-active-p)
 				(region-beginning)
@@ -84,20 +96,18 @@ package.")
 				(region-end)
 			      (point-max)))
 	(db (sqlite-open rare-words-dictionary)))
-    (goto-char highlight-zone-min)
-    (while (< (point) highlight-zone-max)
-      (let* ((cur-word-no-downcase (rare-words--next-word highlight-zone-max))
-	     (cur-word (when cur-word-no-downcase (downcase cur-word-no-downcase)))
-	     (cur-word-rarity (rare-words--identify-rare-word db cur-word)))
-	(unless cur-word (goto-char highlight-zone-max))
-	(when (memq cur-word-rarity '(rare semicommon))
-	  (rare-words--make-rare-word-overlay (match-beginning 0)
-					      (match-end 0)
-					      cur-word-rarity))))))
+    (unwind-protect
+	(progn
+	  (goto-char highlight-zone-min)
+	  (while (< (point) highlight-zone-max)
+	    (let* ((cur-word-no-downcase (rare-words--next-word highlight-zone-max))
+		   (cur-word (when cur-word-no-downcase (downcase cur-word-no-downcase)))
+		   (cur-word-rarity (when cur-word (rare-words--identify-rare-word db cur-word))))
+	      (unless cur-word (goto-char highlight-zone-max))
+	      (when (memq cur-word-rarity '(rare semicommon))
+		(rare-words--make-rare-word-overlay (match-beginning 0)
+						    (match-end 0)
+						    cur-word-rarity)))))
+      (sqlite-close db))))
 
-(defun rare-words-remove-overlays ()
-  (interactive)
-  (dolist (overlay rare-words--active-overlays)
-    (delete-overlay overlay))
-  (setq rare-words--active-overlays nil))
                
