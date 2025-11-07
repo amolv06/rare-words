@@ -63,13 +63,14 @@ package.")
     nil))
 
 (defun rare-words--make-rare-word-overlay (min max rarity)
-  (let ((cur-overlay (make-overlay min max)))
-  (push cur-overlay rare-words--active-overlays)
-  (overlay-put cur-overlay 'face (cond ((eq rarity 'semicommon)
-					rare-words-semi-common-word-face)
-				       ((eq rarity 'rare)
-					rare-words-rare-word-face)
-				       (t nil)))))
+  (when (memq rarity '(rare semicommon))
+    (let ((cur-overlay (make-overlay min max)))
+      (push cur-overlay rare-words--active-overlays)
+      (overlay-put cur-overlay 'face (cond ((eq rarity 'semicommon)
+					    rare-words-semi-common-word-face)
+					   ((eq rarity 'rare)
+					    rare-words-rare-word-face)
+					   (t nil))))))
 
 (defun rare-words--error-checks ()
   (unless (sqlite-available-p)
@@ -78,12 +79,6 @@ package.")
     (error "Bruh, do you even sqlite, bruh? apt get sqlite or something, bruh."))
   (unless (file-exists-p rare-words-dictionary)
     (error "Where's your dictionary, bruh? You think I'm Webster?")))
-
-(defun rare-words-remove-overlays ()
-  (interactive)
-  (dolist (overlay rare-words--active-overlays)
-    (delete-overlay overlay))
-  (setq rare-words--active-overlays nil))
 
 (defun rare-words--get-words-in-region-or-buffer (min max)
   (let ((word-list nil))
@@ -96,14 +91,27 @@ package.")
 	  (goto-char max))))
     (delete-dups word-list)))
 
-(defun rare-words--make-temp-words-table (db word-list)
+(defun rare-words--get-word-frequency (db word-list)
   (sqlite-execute db "create temp table buf_words (word text primary key)")
   (dolist (w word-list)
     (sqlite-execute db "insert into buf_words values (?)" (list w)))
   (sqlite-select db "select a.* from dictionary as a inner join buf_words as b on a.word=b.word"))
-    
-  
-    
+
+(defun rare-words--plist-to-hash (plist)
+  (let ((hash-table (make-hash-table :test 'equal)))
+    (while plist
+      (let ((key (car plist))
+	    (value (cadr plist)))
+	(puthash key value hash-table))
+      (setq plist (cddr plist)))
+    hash-table))		 
+
+(defun rare-words-remove-overlays ()
+  (interactive)
+  (dolist (overlay rare-words--active-overlays)
+    (delete-overlay overlay))
+  (setq rare-words--active-overlays nil))
+
 (defun rare-words-highlight ()
   (interactive)
   (rare-words-remove-overlays)
@@ -116,18 +124,26 @@ package.")
 			       (point-max)))
 	 (db (sqlite-open rare-words-dictionary))
 	 (words-in-region (rare-words--get-words-in-region-or-buffer highlight-zone-min
-								     highlight-zone-max)))
+								     highlight-zone-max))
+	 (word-frequency-plist (flatten-list (rare-words--get-word-frequency db words-in-region)))
+	 (word-frequency-hash (rare-words--plist-to-hash word-frequency-plist)))
     (goto-char highlight-zone-min)
     (while (< (point) highlight-zone-max)
       (let* ((cur-word-no-downcase (rare-words--next-word highlight-zone-max))
 	     (cur-word (when cur-word-no-downcase (downcase cur-word-no-downcase))))
 	(if cur-word
-	    (push cur-word words-in-region)
-	  (goto-char highlight-zone-max))
-	(when (memq cur-word-rarity '(rare semicommon))
-	  (rare-words--make-rare-word-overlay (match-beginning 0)
-					      (match-end 0)
-					      cur-word-rarity)))))
-  (sqlite-close db))
+	    (rare-words--make-rare-word-overlay (match-beginning 0)
+						(match-end 0)
+						(gethash cur-word word-frequency-hash))
+	  (goto-char highlight-zone-max))))))
+    
+
+    
+    
+	;; (when (memq cur-word-rarity '(rare semicommon))
+	;;   (rare-words--make-rare-word-overlay (match-beginning 0)
+	;; 				      (match-end 0)
+	;; 				      cur-word-rarity)))))
+  
 
                
