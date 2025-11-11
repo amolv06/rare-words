@@ -36,7 +36,7 @@ common ones.")
   "The overlay face used for rare words"
   :type '(face))
 
-(defcustom rare-words-search-forward-regex "[A-Za-z']"
+(defcustom rare-words-search-forward-regex "[A-Za-z']+"
   "Regular expression used to define word patterns we want included."
   :type '(string))
 
@@ -134,16 +134,14 @@ package.")
 	(if cur-word
 	    (rare-words--make-rare-word-overlay (match-beginning 0)
 						(match-end 0)
-						(gethash cur-word word-frequency-hash))
+						(let ((freq (gethash cur-word word-frequency-hash)))
+						  (if freq
+						      (cond ((< freq rare-words-common-word-cutoff)
+							     'common)
+							    ((< freq rare-words-semi-common-word-cutoff)
+							     'semicommon)
+							    (t 'rare))
+						    'do-nothing)))
 	  (goto-char highlight-zone-max))))))
-    
 
-    
-    
-	;; (when (memq cur-word-rarity '(rare semicommon))
-	;;   (rare-words--make-rare-word-overlay (match-beginning 0)
-	;; 				      (match-end 0)
-	;; 				      cur-word-rarity)))))
-  
 
-               
