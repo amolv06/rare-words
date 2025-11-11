@@ -45,17 +45,33 @@ common ones.")
 package.")
 
 (defun rare-words--identify-rare-word (db word)
+  "Look up sqlite database DB for WORD and returns its rarity.
+
+DB is expected to be a sqlite database file containing a table called
+\"dictionary\" with a list of all strings identified as legitimate
+words and their ranking in terms of frequency of use. Return values
+can either be `rare', `semicommon' `common', or `unk' (for strings not
+in the dictionary table). The ranking ranges for word classification
+are defined by the custom variables. `rare-words-semi-common-word-cutoff' and `rare-words-common-word-cutoff'."
+
   (let* ((rank (or (cadar (sqlite-select db "select * from dictionary where word=?1" `(,word)))
-	       'unknown)))
-  (cond ((eq rank 'unknown)
-	 'unk)
-	((< rank rare-words-common-word-cutoff)
-	 'common)
-	((< rank rare-words-semi-common-word-cutoff)
-	 'semicommon)
-	(t 'rare))))
+		   'unknown)))
+    (cond ((eq rank 'unknown)
+	   'unk)
+	  ((< rank rare-words-common-word-cutoff)
+	   'common)
+	  ((< rank rare-words-semi-common-word-cutoff)
+	   'semicommon)
+	  (t 'rare))))
 
 (defun rare-words--next-word (&optional max)
+  "Find the next word, until a `point' value given by MAX is reached.
+
+What classifies as a word is given by the customizable variable
+`rare-words-search-forward-regex'. Uses `re-search-forward' to find
+the next word, so `match-beginning' and `match-end' are available for
+subsequent use."
+
   (if (re-search-forward rare-words-search-forward-regex
 			 (or max (point-max))
 			 t)
@@ -73,6 +89,12 @@ package.")
 					   (t nil))))))
 
 (defun rare-words--error-checks ()
+  "Ensure that package prerequisites are available.
+
+Checks that sqlite functions are available in Emacs, that Sqlite is
+installed on the system, and that we can find the frequency dictionary
+given by `rare-words-dictionary'."
+  
   (unless (sqlite-available-p)
     (error "When did you compile emacs bruh? 1983? You don't have SQLite support"))
   (unless (executable-find "sqlite3")
@@ -143,5 +165,3 @@ package.")
 							    (t 'rare))
 						    'do-nothing)))
 	  (goto-char highlight-zone-max))))))
-
-
