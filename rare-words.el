@@ -1,3 +1,8 @@
+;;; rare-words.el --- Highlight your rare words!  -*- lexical-binding: t; -*-
+;; Copyright (C) 2025 Amol Vaidya (BigEatie)
+;; Author: Amol Vaidya <amolvaidya.signup@gmail.com>
+;; Created: 4 December 2025
+
 
 (defgroup rare-words nil
   "Customization group for the rare-words package.")
@@ -69,7 +74,7 @@ package."
 
 (defun rare-words--make-rare-word-overlay (rarity)
   (when (memq rarity '(rare semicommon))
-    (let ((cur-overlay (make-overlay min max)))
+    (let ((cur-overlay (make-overlay (match-beginning 0) (match-end 0))))
       (push cur-overlay rare-words--overlay-list)
       (overlay-put cur-overlay 'face (cond ((eq rarity 'semicommon) rare-words-semi-common-word-face)
 					   ((eq rarity 'rare) rare-words-rare-word-face))))))
@@ -91,23 +96,18 @@ package."
     (goto-char highlight-zone-min)
     (while (< (point) highlight-zone-max) 
       (let ((word (rare-words--get-next-word)))
-	(when word (setq word (downcase word)))
-	(rare-words--make-rare-word-overlay (let ((freq (gethash word word-frequency-hash)))
-					      (cond ((< freq rare-words-common-word-cutoff) 'common)
-						    ((< rare-words-common-word-cutoff freq rare-words-semi-common-word-cutoff) 'semicommon)
-						    ((> freq rare-words-semi-common-word-cutoff 'rare))
-						    (t 'unk))))))))
-					       
-     
-    
-    
+	(if word
+	    (setq word (downcase word))
+	  (goto-char highlight-zone-max))
+	(let (( freq (gethash word word-frequency-hash)))
+	  (when freq
+	    (rare-words--make-rare-word-overlay 
+	     (cond ((< freq rare-words-common-word-cutoff) 'common)
+		   ((< rare-words-common-word-cutoff freq rare-words-semi-common-word-cutoff) 'semicommon)
+		   ((> freq rare-words-semi-common-word-cutoff) 'rare)
+		   (t 'unk)))))))))
 
-The quick brown fox jumps over the lazy dog.
+(provide 'rare-words)
 
-;; Some ideas:
-;; 1. Transactions
-;; 2. Indices on both the temp table and dictionary.
-;; 3. Hash table
 
-;; Bracket overlays 
 
