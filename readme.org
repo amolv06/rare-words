@@ -1,0 +1,25 @@
+#+TITLE: Rare Words
+
+An Emacs package that highlights rare and semicommon words.
+
+* Installation
+
+To install, clone this repository and add it to your ~load-path~.
+
+/Application to MELPA pending/
+
+* Usage
+
+This package provides two user-facing functions: ~rare-words-highlight~ and ~rare-words-kill-highlights~. Invoking ~rare-words-highlight~ highlights all rare and semicommon words, either within the active region or within the active portion of the buffer when no region is active. Invoking ~rare-words-kill-highlights~ removes all highlights in the current buffer created by this package.
+
+* User Options
+
+This package assigns a frequency ranking to every word in the examined region by consulting a SQLite database of English words ranks. Users may configure the thresholds that determine which words are considered common, semicommon, or rare, and they may set the faces used to highlight them. A custom SQLite database may also be supplied to replace the default one. All features are controlled through customizable variables:
+
++ ~rare-words-dictionary~: A SQLite database containing word frequency rankings. It must contain a table named =dictionary=, with columns =word= (text) and =rank= (integer). Only words present in this dictionary are eligible to be marked as semicommon or rare.
+
+  The default dictionary includes nearly 400,000 records of [[https://en.wikipedia.org/wiki/Lemma_(morphology)][lemmas]] and [[https://en.wikipedia.org/wiki/Inflection][inflections]], with the 4,500 most frequent lemmas and their inflections explicitly ranked. All inflections of a lemma share the same rank. Any word not explicitly ranked is assigned a rank of =9999999=.
++ ~rare-words-common-word-cutoff~: The highest rank at which a word is considered common. Words with higher rank are classified as semicommon or rare. Must be an integer.
++ ~rare-words-semi-common-word-cutoff~: The highest rank at which a word is considered semicommon. Words with higher rank are considered rare. Must be an integer.
++ ~rare-words-semi-common-word-face~: The face used to highlight semicommon words.
++ ~rare-words-rare-word-face~: The face used to highlight rare words.
