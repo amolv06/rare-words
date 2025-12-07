@@ -34,7 +34,8 @@
 ;;; Code:
 
 (defgroup rare-words nil
-  "Customization group for the rare-words package.")
+  "Customization group for the rare-words package."
+  :group 'emacs)
 
 (defcustom rare-words-common-word-cutoff 2500
   "Threshold below which all words are considered common.
@@ -42,7 +43,8 @@
 If the rank of a word is between `rare-words-common-word-cutoff' and
 `rare-words-semi-common-word-cutoff' then the word is considered
 semicommon."
-  :type '(natnum))
+  :type '(natnum)
+  :group 'rare-words)
 
 (defcustom rare-words-semi-common-word-cutoff 4510
   "Threshold above which all words are considered rare.
@@ -50,7 +52,8 @@ semicommon."
 If the rank of a word is between `rare-words-common-word-cutoff' and
 `rare-words-semi-common-word-cutoff' then the word is considered
 semicommon."
-  :type '(natnum))
+  :type '(natnum)
+  :group 'rare-words)
 
 (defcustom rare-words-dictionary (expand-file-name "words.db"
 						   (file-name-directory (or load-file-name
@@ -59,21 +62,26 @@ semicommon."
 
 It must contain a table named dictionary, with columns word (text) and
 rank (integer). Only words present in this dictionary are eligible to
-be marked as semicommon or rare.")
+be marked as semicommon or rare."
+  :group 'rare-words)
 
 (defcustom rare-words-semi-common-word-face 'warning
   "The face used to highlight semicommon words."
-  :type '(face))
+  :type '(face)
+  :group 'rare-words)
 
 (defcustom rare-words-rare-word-face 'error
   "The face used to highlight rare words."
-  :type '(face))
+  :type '(face)
+  :group 'rare-words)
 
 (defcustom rare-words-search-forward-regex "[A-Za-z']+"
-  "Regular expression delineating a word for the rare-words package.")
+  "Regular expression delineating a word for the rare-words package."
+  :group 'rare-words)
 
 (defvar-local rare-words--overlay-list nil
-  "Local list of overlays associated with the rare-words package.")
+  "Local list of overlays associated with the rare-words package."
+ 'rare-words)
 
 (defun rare-words-kill-highlights ()
   "Deletes local overlay list associated with rare-words package."
