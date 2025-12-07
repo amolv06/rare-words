@@ -1,4 +1,4 @@
-i;;; rare-words.el --- Highlight your rare words!  -*- lexical-binding: t; -*-
+;;; rare-words.el --- Highlight your rare words!  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2025 Amol Vaidya (BigEatie)
 
@@ -6,7 +6,7 @@ i;;; rare-words.el --- Highlight your rare words!  -*- lexical-binding: t; -*-
 ;; Created: 4 December 2025
 ;; URL: https://github.com/amolv06/rare-words
 ;; Version: 1.0.0
-;; Package-Requires: ((Emacs "29.1"))
+;; Package-Requires: ((emacs "29.1"))
 
 ;; This program is free software: you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
