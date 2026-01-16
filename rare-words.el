@@ -49,7 +49,7 @@ semicommon."
 (defcustom rare-words-semi-common-word-cutoff 4510
   "Threshold above which all words are considered rare.
 
-If the rank of a word is between `rare-words-common-word-cutoff' and
+If the rank of a word is between `rare-words-cggommon-word-cutoff' and
 `rare-words-semi-common-word-cutoff' then the word is considered
 semicommon."
   :type '(natnum)
@@ -80,8 +80,7 @@ be marked as semicommon or rare."
   :group 'rare-words)
 
 (defvar-local rare-words--overlay-list nil
-  "Local list of overlays associated with the rare-words package."
- 'rare-words)
+  "Local list of overlays associated with the rare-words package.")
 
 (defun rare-words-kill-highlights ()
   "Deletes local overlay list associated with rare-words package."
