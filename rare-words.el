@@ -22,7 +22,7 @@
 ;; along with this program. If not, see
 ;; <https://www.gnu.org/licenses/>.
 
-;;; Commentary: 
+;;; Commentary:
 
 ;; This package looks at the active region, or if no region is active,
 ;; then the entire buffer, and highlights any rare or semicommon words
@@ -55,15 +55,14 @@ semicommon."
   :type '(natnum)
   :group 'rare-words)
 
-(defcustom rare-words-dictionary (expand-file-name "words.db"
-						   (file-name-directory (or load-file-name
-									    (buffer-file-name))))
+(defcustom rare-words-dictionary nil 
   "A SQLite database containing word frequency rankings.
 
 It must contain a table named dictionary, with columns word (text) and
 rank (integer). Only words present in this dictionary are eligible to
 be marked as semicommon or rare."
-  :group 'rare-words)
+  :group 'rare-words
+  :type '(file))
 
 (defcustom rare-words-semi-common-word-face 'warning
   "The face used to highlight semicommon words."
@@ -77,7 +76,8 @@ be marked as semicommon or rare."
 
 (defcustom rare-words-search-forward-regex "[A-Za-z']+"
   "Regular expression delineating a word for the rare-words package."
-  :group 'rare-words)
+  :group 'rare-words
+  :type '(regexp))
 
 (defvar-local rare-words--overlay-list nil
   "Local list of overlays associated with the rare-words package."
@@ -102,7 +102,8 @@ be marked as semicommon or rare."
       results)))
 
 (defun rare-words--get-next-word (&optional max)
-  "Return the next word from point based on `rare-words-search-forward-regex'."
+  "Searches up to point MAX (default `point-max). Return the word
+as a string, or nil if no match is found. Moves point."
   (interactive)
   (if (re-search-forward rare-words-search-forward-regex
 			 (or max (point-max))
@@ -128,6 +129,23 @@ be marked as semicommon or rare."
       (push cur-overlay rare-words--overlay-list)
       (overlay-put cur-overlay 'face (cond ((eq rarity 'semicommon) rare-words-semi-common-word-face)
 					   ((eq rarity 'rare) rare-words-rare-word-face))))))
+
+(defun rare-words--ensure-dictionary ()
+  "Ensure a dictionary database exists. If not, optionally download one."
+
+  (unless rare-words-dictionary
+    (let ((rare-words-dictionary-tmp (file-name-concat user-emacs-directory
+					 "rare-words-db"
+					 "words.db")))
+    (if (file-exists-p rare-words-dictionary-tmp)
+	(setq rare-words-dictionary rare-words-dictionary-tmp)
+      (progn
+	(when (y-or-n-p "A word-frequency dictionary is required. Should a default be downloaded? ")
+	  (setq rare-words-dictionary rare-words-dictionary-tmp)
+	  (unless (file-exists-p (file-name-concat user-emacs-directory "rare-words-db"))
+	    (make-directory (file-name-concat user-emacs-directory "rare-words-db")))
+	      
+    
 					   
       
 (defun rare-words-highlight ()
