@@ -134,18 +134,17 @@ as a string, or nil if no match is found. Moves point."
 
   (unless rare-words-dictionary
     (let ((rare-words-dictionary-tmp (file-name-concat user-emacs-directory
-					 "rare-words-db"
-					 "words.db")))
-    (if (file-exists-p rare-words-dictionary-tmp)
-	(setq rare-words-dictionary rare-words-dictionary-tmp)
-      (progn
-	(when (y-or-n-p "A word-frequency dictionary is required. Should a default be downloaded? ")
+						       "rare-words-db"
+						       "words.db")))
+      (if (file-exists-p rare-words-dictionary-tmp)
 	  (setq rare-words-dictionary rare-words-dictionary-tmp)
-	  (unless (file-exists-p (file-name-concat user-emacs-directory "rare-words-db"))
-	    (make-directory (file-name-concat user-emacs-directory "rare-words-db")))
-	      
-    
-					   
+	(progn
+	  (when (y-or-n-p "A word-frequency dictionary is required. Should a default be downloaded? ")
+	    (setq rare-words-dictionary rare-words-dictionary-tmp)
+	    (unless (file-exists-p (file-name-concat user-emacs-directory "rare-words-db"))
+	      (make-directory (file-name-concat user-emacs-directory "rare-words-db")))
+	    (url-copy-file "https://raw.githubusercontent.com/amolv06/rare-words/refs/heads/master/words.db" rare-words-dictionary))))))
+  rare-words-dictionary)
       
 (defun rare-words-highlight ()
   "Highlight all rare and semicommon words in buffer or active region.
