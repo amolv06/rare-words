@@ -165,7 +165,7 @@ region, otherwise highlights words in the entire buffer."
 	       (word-list (rare-words--get-words-in-region-or-buffer highlight-zone-min highlight-zone-max))
 	       (word-frequency (rare-words--get-word-frequency word-list))
 	       (word-frequency-hash (make-hash-table :test 'equal)))
-	  (mapcar (lambda (x) (puthash (car x) (cadr x) word-frequency-hash)) word-frequency)
+	  (mapc (lambda (x) (puthash (car x) (cadr x) word-frequency-hash)) word-frequency)
 	  (goto-char highlight-zone-min)
 	  (while (< (point) highlight-zone-max)
 	    (let ((word (rare-words--get-next-word)))
