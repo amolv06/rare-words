@@ -155,31 +155,31 @@ region, otherwise highlights words in the entire buffer."
 
   (interactive)
   (if (rare-words--ensure-dictionary)
-  (save-excursion
-    (rare-words-kill-highlights)
-    (let* ((highlight-zone-min (if (region-active-p)
-				   (region-beginning)
-				 (point-min)))
-	   (highlight-zone-max (if (region-active-p)
-				   (region-end)
-				 (point-max)))
-	   (word-list (rare-words--get-words-in-region-or-buffer highlight-zone-min highlight-zone-max))
-	   (word-frequency (rare-words--get-word-frequency word-list))
-	   (word-frequency-hash (make-hash-table :test 'equal)))
-      (mapcar (lambda (x) (puthash (car x) (cadr x) word-frequency-hash)) word-frequency)
-      (goto-char highlight-zone-min)
-      (while (< (point) highlight-zone-max)
-	(let ((word (rare-words--get-next-word)))
-	  (if word
-	      (setq word (downcase word))
-	    (goto-char highlight-zone-max))
-	  (let (( freq (gethash word word-frequency-hash)))
-	    (when freq
-	      (rare-words--make-rare-word-overlay
-	       (cond ((< freq rare-words-common-word-cutoff) 'common)
-		     ((< rare-words-common-word-cutoff freq rare-words-semi-common-word-cutoff) 'semicommon)
-		     ((> freq rare-words-semi-common-word-cutoff) 'rare)
-		     (t 'unk)))))))))))
+      (save-excursion
+	(rare-words-kill-highlights)
+	(let* ((highlight-zone-min (if (region-active-p)
+				       (region-beginning)
+				     (point-min)))
+	       (highlight-zone-max (if (region-active-p)
+				       (region-end)
+				     (point-max)))
+	       (word-list (rare-words--get-words-in-region-or-buffer highlight-zone-min highlight-zone-max))
+	       (word-frequency (rare-words--get-word-frequency word-list))
+	       (word-frequency-hash (make-hash-table :test 'equal)))
+	  (mapcar (lambda (x) (puthash (car x) (cadr x) word-frequency-hash)) word-frequency)
+	  (goto-char highlight-zone-min)
+	  (while (< (point) highlight-zone-max)
+	    (let ((word (rare-words--get-next-word)))
+	      (if word
+		  (setq word (downcase word))
+		(goto-char highlight-zone-max))
+	      (let (( freq (gethash word word-frequency-hash)))
+		(when freq
+		  (rare-words--make-rare-word-overlay
+		   (cond ((< freq rare-words-common-word-cutoff) 'common)
+			 ((< rare-words-common-word-cutoff freq rare-words-semi-common-word-cutoff) 'semicommon)
+			 ((> freq rare-words-semi-common-word-cutoff) 'rare)
+			 (t 'unk)))))))))))
 
 (provide 'rare-words)
 
